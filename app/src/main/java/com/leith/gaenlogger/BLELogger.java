@@ -266,8 +266,13 @@ class BLELogger {
                 s.rpi = rpiStr;
                 s.fname = pname+"/"+fname;
                 s.timestamp = Instant.now().getEpochSecond();
-                s.latitude = last_location.getLatitude();
-                s.longitude = last_location.getLongitude();
+                if (last_location!=null) {
+                    s.latitude = last_location.getLatitude();
+                    s.longitude = last_location.getLongitude();
+                } else {
+                    s.latitude = 0;
+                    s.longitude = 0;
+                }
                 updateLocation();
                 opportunisticScandb.opportunisticScanDao().insert(s);
                 u.tryUICallback(scanCallback,"",localBroadcastManager);
