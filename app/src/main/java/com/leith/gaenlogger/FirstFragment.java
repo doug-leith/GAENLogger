@@ -114,7 +114,7 @@ public class FirstFragment extends Fragment {
                 activity.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
             } else if (action.equals(BLELogger.scanCallback)) {
                 // new scan result update UI
-                Log.d("DL","new scan result");
+                Debug.println("new scan result");
                 updateText();
             }
         }

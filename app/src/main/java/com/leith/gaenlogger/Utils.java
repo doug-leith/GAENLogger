@@ -73,6 +73,10 @@ class Utils {
     }
 
     boolean isOpportunisticSetScannerOn(Activity activity) {
+        if (activity == null) {
+            Log.e("DL","isOpportunisticSetScannerOn() called with activity eq null");
+            return false;
+        }
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(activity);
         return sharedPref.getBoolean("opportunistic_scanner", false);
     }

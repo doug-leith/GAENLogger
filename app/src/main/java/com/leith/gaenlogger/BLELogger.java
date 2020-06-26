@@ -257,6 +257,7 @@ class BLELogger {
             final String pname = u.pathname()+"/"+u.fnameDate();
             u.writeFile(null, pname,fname,
                     "opportunistic scanner: "+result.toString()+"\n", true); // save to sdcard
+            Log.d("DL", "RPI is "+rpiStr);
             // keep a log of which file contains scan results for this RPI,
             // then we'll be able to answer queries for a given RPI and
             // also for a given TEK (we generate all the RPIs for the TEK then
@@ -274,8 +275,11 @@ class BLELogger {
                     s.longitude = 0;
                 }
                 updateLocation();
-                opportunisticScandb.opportunisticScanDao().insert(s);
-                u.tryUICallback(scanCallback,"",localBroadcastManager);
+                // take lock when updating DB, to be safe
+                synchronized (opportunisticScandb) {
+                    opportunisticScandb.opportunisticScanDao().insert(s);
+                }
+                u.tryUICallback(scanCallback, "", localBroadcastManager);
             } } ).start();
         }
 

@@ -40,6 +40,15 @@
         android:background="@android:drawable/editbox_background"
        />
 
+        <TextView
+            android:id="@+id/status"
+            android:layout_width="match_parent"
+            android:layout_margin="10dp"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true"
+            />
     </RelativeLayout>
 
 </RelativeLayout>
