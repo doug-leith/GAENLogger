@@ -18,7 +18,8 @@ public interface OpportunisticScanDao {
     @Query("SELECT * FROM opportunisticScan_table WHERE rpi = :rpi")
     List<OpportunisticScanEntity> getRPI(String rpi);
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    //@Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     void insert(OpportunisticScanEntity entity);
 
     @Query("DELETE FROM OpportunisticScan_table")
