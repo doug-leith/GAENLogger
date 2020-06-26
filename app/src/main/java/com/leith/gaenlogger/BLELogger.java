@@ -1,6 +1,7 @@
 package com.leith.gaenlogger;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
@@ -8,10 +9,15 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
+import android.location.Location;
 import android.os.ParcelUuid;
 import android.util.Log;
 
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnSuccessListener;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -33,11 +39,14 @@ class BLELogger {
     static String bleOffCallback = "BLEOff";
     static String scanCallback = "scanResult";
     private LocalBroadcastManager localBroadcastManager;
+    private Context context;
     private Cipher cipherCTR = null;
 
     //opportunistic scanner
     private MyOpportunisticScanCallback opportunisticScanCallback = null;
     private OpportunisticScanRepository opportunisticScandb = null;
+    private FusedLocationProviderClient fusedLocationClient;
+    private Location last_location = null;
 
     // configuration flags
     private static final boolean DEBUGGING = false;  // generate extra debug output ?
@@ -53,10 +62,13 @@ class BLELogger {
     }
 
     BLELogger(Context c, LocalBroadcastManager b) {
+        context = c;
         localBroadcastManager = b;
         if (opportunisticScandb == null) {
             opportunisticScandb = OpportunisticScanRepository.getInstance(c);
         }
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(c);
+        updateLocation();
     }
 
     static String byteToHex(byte num) {
@@ -221,6 +233,19 @@ class BLELogger {
         }
     }
 
+    void  updateLocation() {
+        fusedLocationClient.getLastLocation()
+                .addOnSuccessListener((Activity) context, new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        // Got last known location. In some rare situations this can be null.
+                        if (location != null) {
+                            last_location = location;
+                        }
+                    }
+                });
+    }
+
     class MyOpportunisticScanCallback extends ScanCallback {
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
@@ -242,6 +267,9 @@ class BLELogger {
                 s.rpi = rpiStr;
                 s.fname = pname+"/"+fname;
                 s.timestamp = Instant.now().getEpochSecond();
+                s.latitude = last_location.getLatitude();
+                s.longitude = last_location.getLongitude();
+                updateLocation();
                 opportunisticScandb.opportunisticScanDao().insert(s);
                 u.tryUICallback(scanCallback,"",localBroadcastManager);
             } } ).start();

@@ -16,4 +16,10 @@ public class OpportunisticScanEntity {
 
     @ColumnInfo(name = "timestamp")
     long timestamp;
+
+    @ColumnInfo(name = "lat")
+    double latitude;
+
+    @ColumnInfo(name = "long")
+    double longitude;
 }

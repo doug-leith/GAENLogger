@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 2,
-    "identityHash": "7907d1dd11b046d9aa90f090276de100",
+    "identityHash": "7f9474b521460f60dcb4ea1a8295938a",
     "entities": [
       {
         "tableName": "opportunisticScan_table",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`rpi` TEXT NOT NULL, `fname` TEXT, `timestamp` INTEGER NOT NULL, PRIMARY KEY(`rpi`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`rpi` TEXT NOT NULL, `fname` TEXT, `timestamp` INTEGER NOT NULL, `lat` REAL NOT NULL, `long` REAL NOT NULL, PRIMARY KEY(`rpi`))",
         "fields": [
           {
             "fieldPath": "rpi",
@@ -25,6 +25,18 @@
             "columnName": "timestamp",
             "affinity": "INTEGER",
             "notNull": true
+          },
+          {
+            "fieldPath": "latitude",
+            "columnName": "lat",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "longitude",
+            "columnName": "long",
+            "affinity": "REAL",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -40,7 +52,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7907d1dd11b046d9aa90f090276de100')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7f9474b521460f60dcb4ea1a8295938a')"
     ]
   }
 }

@@ -63,10 +63,11 @@ public class FirstFragment extends Fragment {
                     = opportunisticScandb.opportunisticScanDao().getSince(Instant.now().getEpochSecond()-24*60*60);
             String output="";
             for (int i=0; i<res.size(); i=i+1) {
+                OpportunisticScanEntity r = res.get(i);
                 //DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.UK );
                 DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss", Locale.UK );
-                String d = dateFormat.format(Date.from(Instant.ofEpochSecond(res.get(i).timestamp)));
-                output = output+res.get(i).rpi+" ("+d+")\n";
+                String d = dateFormat.format(Date.from(Instant.ofEpochSecond(r.timestamp)));
+                output = output+r.rpi+" (t: "+d+" lat: "+r.latitude+" long: "+r.longitude+")\n";
             }
             final String output_display = output;
             getActivity().runOnUiThread( new Runnable() {
@@ -202,6 +203,7 @@ public class FirstFragment extends Fragment {
         super.onResume();
         u.checkScannerPerms(getActivity());
         u.checkPerm(activity,Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        updateText();
     }
 
     @Override
