@@ -3,11 +3,9 @@ package com.leith.gaenlogger;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Environment;
-import android.preference.PreferenceManager;
 import android.util.Log;
 
 import androidx.core.app.ActivityCompat;
@@ -72,15 +70,6 @@ class Utils {
         }
     }
 
-    boolean isOpportunisticSetScannerOn(Activity activity) {
-        if (activity == null) {
-            Log.e("DL","isOpportunisticSetScannerOn() called with activity eq null");
-            return false;
-        }
-        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(activity);
-        return sharedPref.getBoolean("opportunistic_scanner", false);
-    }
-
     boolean startOpportunisticScanWrapper(Activity activity) {
         // start BLE scanning
         if (activity == null) {
@@ -106,19 +95,6 @@ class Utils {
         Intent intentKeepAwake = new Intent(activity, KeepAwakeService.class);
         intentKeepAwake.putExtra("cmd", "stopOpportunisticScan");
         activity.startForegroundService(intentKeepAwake);
-    }
-
-    boolean syncOpportunisticScannerState(Activity activity) {
-        if (isOpportunisticSetScannerOn(activity)) {
-            if (!startOpportunisticScanWrapper(activity)) {
-                Log.e("DL", "Problem starting scanner");
-                return false;
-            }
-            return true;
-        } else {
-            stopOpportunisticScanWrapper(activity);
-            return true;
-        }
     }
 
     String datetimeString() {
@@ -167,10 +143,6 @@ class Utils {
 
     String opportunisticScannerFilename(String rpiStr) {
          return "opportunistic_scanner_"+rpiStr+"_"+fnameDate()+".txt";
-    }
-
-    String logFilename() {
-        return "log_"+fnameDate()+".txt";
     }
 
     void tryUICallback(String callback, String msg, LocalBroadcastManager localBroadcastManager) {

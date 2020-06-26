@@ -7,7 +7,10 @@ import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.location.Location;
 import android.os.ParcelUuid;
 import android.util.Log;
@@ -36,9 +39,10 @@ class BLELogger {
     private final BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
     private Utils u = Utils.getInstance();
     static String bleOffCallback = "BLEOff";
+    static String scanOnCallback = "scanOn";
+    static String scanOffCallback = "scanOff";
     static String scanCallback = "scanResult";
     private LocalBroadcastManager localBroadcastManager;
-    private Context context;
     private Cipher cipherCTR = null;
 
     //opportunistic scanner
@@ -48,7 +52,7 @@ class BLELogger {
     private Location last_location = null;
 
     // configuration flags
-    private static final boolean DEBUGGING = false;  // generate extra debug output ?
+    private static final boolean DEBUGGING = true;  // generate extra debug output ?
     private final boolean restartCTR = false; // false = keep CTR counter rolling
 
     private static BLELogger instance = null;
@@ -61,14 +65,54 @@ class BLELogger {
     }
 
     BLELogger(Context c, LocalBroadcastManager b) {
-        context = c;
         localBroadcastManager = b;
         if (opportunisticScandb == null) {
             opportunisticScandb = OpportunisticScanRepository.getInstance(c);
         }
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(c);
         updateLocation();
+        // to catch bluetooth state changes we need to use register receiver globally
+        // *not* with localBroadcastManager (else we don't see broadcasts)
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
+        c.registerReceiver(mReceiver, filter);
+
+        // scan always runs
+        startOpportunisticScan();
     }
+
+    BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+            Debug.println("mReceiver() with action "+action);
+            if (action == null) { return; }
+            if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
+                //event where bluetooth state changes, e.g. switched on/off
+                final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
+                        BluetoothAdapter.ERROR);
+                Debug.println("bluetooth state "+state);
+                switch (state) {
+                    case BluetoothAdapter.STATE_OFF:
+                        Debug.println("Bluetooth off, stopping scan");
+                        stopOpportunisticScan();
+                        u.tryUICallback(bleOffCallback,"",localBroadcastManager);
+                        break;
+                    case BluetoothAdapter.STATE_TURNING_OFF:
+                        //Debug.println("Turning Bluetooth off...");
+                        break;
+                    case BluetoothAdapter.STATE_ON:
+                        Debug.println("Bluetooth on, starting scan");
+                        // start/restart scanner
+                        startOpportunisticScan();
+                        break;
+                    case BluetoothAdapter.STATE_TURNING_ON:
+                        //Debug.println("Turning Bluetooth on...");
+                        break;
+                }
+            }
+        }
+    };
 
     static String byteToHex(byte num) {
         char[] hexDigits = new char[2];
@@ -137,8 +181,8 @@ class BLELogger {
             for(int i = 12; i < 16; i++) { paddedData[i]=interval[i-12]; }
 
             byte[] RPI = cipher.doFinal(paddedData,0,16);
-            u.writeFile(null,u.pathname(),u.logFilename(),
-                    "RPI "+ encodeHexString(RPI)+"\n",true);
+            //u.writeFile(null,u.pathname(),u.logFilename(),
+            //        "RPI "+ encodeHexString(RPI)+"\n",true);
             return RPI;
         } catch (Exception e) {
             Log.e("DL", "problem getting AES-128 hash for RPI: "+e.getMessage());
@@ -189,6 +233,7 @@ class BLELogger {
 
     // opportunistic scanner, can be left running all the time
     void startOpportunisticScan() {
+        Log.d("DL","starting scanning");
         // is bluetooth switched on?
         if (!adapter.isEnabled()) {
             Log.e("DL", "start opportunistic scanner called with bluetooth off.");
@@ -214,6 +259,7 @@ class BLELogger {
         opportunisticScanCallback = new MyOpportunisticScanCallback();
         BluetoothLeScanner scanner = adapter.getBluetoothLeScanner();
         scanner.startScan(opportunisticScanFilters, scanSettings, opportunisticScanCallback);
+        u.tryUICallback(scanOnCallback,"",localBroadcastManager);
     }
 
     void stopOpportunisticScan() {
@@ -224,6 +270,7 @@ class BLELogger {
                 u.tryUICallback(bleOffCallback,"",localBroadcastManager);
             } else {
                 scanner.stopScan(opportunisticScanCallback);
+                u.tryUICallback(scanOffCallback,"",localBroadcastManager);
             }
             opportunisticScanCallback = null;
             Log.i("DL","Opportunistic scanner stopped");

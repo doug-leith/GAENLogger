@@ -8,11 +8,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.PowerManager;
-import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
@@ -36,13 +34,13 @@ import java.util.Locale;
 public class FirstFragment extends Fragment {
 
     private TextView textBox;
-    private SharedPreferences sharedPref;
     private Intent intentKeepAwake = null;
     private final int REQUEST_ENABLE_BT = 11;
     private Activity activity = null;
     private LocalBroadcastManager localBroadcastManager = null;
     private Utils u = Utils.getInstance();
     private OpportunisticScanRepository opportunisticScandb = null;
+    private boolean running = false;
 
     // configuration flags
     private static final boolean DEBUGGING = false;
@@ -85,29 +83,20 @@ public class FirstFragment extends Fragment {
             final String action = intent.getAction();
             Debug.println("mReceiver() with action "+action);
             if (action == null) { return; }
-            if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
-                //event where bluetooth state changes, e.g. switched on/off
-                final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
-                        BluetoothAdapter.ERROR);
-                Debug.println("bluetooth state "+state);
-                switch (state) {
-                    case BluetoothAdapter.STATE_OFF:
-                        Debug.println("Bluetooth off");
-                        break;
-                    case BluetoothAdapter.STATE_TURNING_OFF:
-                        //Debug.println("Turning Bluetooth off...");
-                        break;
-                    case BluetoothAdapter.STATE_ON:
-                        Debug.println("Bluetooth on");
-                        // start/restart background scanner is enabled
-                        u.syncOpportunisticScannerState(getActivity());
-                        break;
-                    case BluetoothAdapter.STATE_TURNING_ON:
-                        //Debug.println("Turning Bluetooth on...");
-                        break;
-                }
-            } else if (action.equals(BLELogger.bleOffCallback)) {
+            final Button startButton = getActivity().findViewById(R.id.startButton);
+            if (startButton == null) { // just checking
+                Log.e("DL","FirstFrag mReceiver called with startButton eq null");
+                return;
+            }
+            if (action.equals(BLELogger.bleOffCallback)) {
                 Debug.println("bleOffCallback");
+                running = false;
+                activity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        startButton.setText("Start Scanning");
+                    }
+                });
                 Debug.println( "Ask user to turn bluetooth on");
                 // ask user to switch on bluetooth
                 Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -116,13 +105,25 @@ public class FirstFragment extends Fragment {
                 // new scan result update UI
                 Debug.println("new scan result");
                 updateText();
+            } else if (action.equals(BLELogger.scanOnCallback)) {
+                running = true;
+                activity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        startButton.setText("Stop Scanning");
+                    }
+                });
+            } else if (action.equals(BLELogger.scanOffCallback)) {
+                running = false;
+                activity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        startButton.setText("Start Scanning");
+                    }
+                });
             }
         }
     };
-
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        Debug.println( "First fragment onActivityResult() reqCode " + requestCode + " "+resultCode);
-    }
 
     @SuppressLint("BatteryLife")
     private void excludeFromBatteryOptimization() {
@@ -146,21 +147,10 @@ public class FirstFragment extends Fragment {
         }
     }
 
-    private final SharedPreferences.OnSharedPreferenceChangeListener configListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
-        @Override
-        public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-            Debug.println("onSharedPreferenceChanged");
-            u.syncOpportunisticScannerState(getActivity());
-        }
-    };
-
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
         activity = getActivity();
-        sharedPref = PreferenceManager.getDefaultSharedPreferences(activity);
-        sharedPref.registerOnSharedPreferenceChangeListener(configListener);
-
         if (opportunisticScandb == null) {
             opportunisticScandb = OpportunisticScanRepository.getInstance(activity);
         }
@@ -174,19 +164,28 @@ public class FirstFragment extends Fragment {
             }
         });
 
+        view.findViewById(R.id.startButton).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (!running) {
+                    u.checkScannerPerms(getActivity());
+                    u.startOpportunisticScanWrapper(activity);
+                } else {
+                    u.stopOpportunisticScanWrapper(activity);
+                }
+            }
+        });
+
         textBox = view.findViewById(R.id.textBox);
         textBox.setMovementMethod(new ScrollingMovementMethod());
         updateText();
 
         IntentFilter filter = new IntentFilter(BLELogger.scanCallback);
+        filter.addAction(BLELogger.scanOnCallback);
+        filter.addAction(BLELogger.scanOffCallback);
         filter.addAction(BLELogger.bleOffCallback);
         localBroadcastManager = LocalBroadcastManager.getInstance(getActivity());
         localBroadcastManager.registerReceiver(mReceiver, filter);
-        // to catch bluetooth state changes we need to use register receiver globally
-        // *not* with localBroadcastManager (else we don't see broadcasts)
-        filter = new IntentFilter();
-        filter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
-        getActivity().registerReceiver(mReceiver, filter);
 
         // ask permission to disable battery optimisation (which puts app to sleep)
         excludeFromBatteryOptimization();
@@ -194,8 +193,7 @@ public class FirstFragment extends Fragment {
         u.checkPerm(activity,Manifest.permission.WRITE_EXTERNAL_STORAGE);
         // fire up scanner
         u.checkScannerPerms(getActivity());
-        u.syncOpportunisticScannerState(getActivity());
-
+        u.startOpportunisticScanWrapper(getActivity());
     }
 
     @Override

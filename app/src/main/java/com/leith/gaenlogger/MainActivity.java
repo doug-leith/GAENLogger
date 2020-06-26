@@ -48,11 +48,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
         final Fragment firstFrag = new FirstFragment();
-        final Fragment settingsFrag = new SettingsFragment();
 
         @Override
         public int getCount() {
-            return 2;
+            return 1;
         }
 
         @Override
@@ -60,8 +59,6 @@ public class MainActivity extends AppCompatActivity {
             switch(position) {
                 case FIRST_FRAG:
                     return firstFrag;
-                case SETTINGS_FRAG:
-                    return settingsFrag;
                  default:
                     return null;
             }

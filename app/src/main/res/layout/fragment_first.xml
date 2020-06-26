@@ -7,17 +7,25 @@
 
     <RelativeLayout
         android:orientation="horizontal"
-        android:gravity="right"
         android:layout_alignParentTop="true"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/firstfrag_row1">
+        <Button
+            android:id="@+id/startButton"
+            style="@style/Widget.AppCompat.Button"
+            android:layout_width="140dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:layout_alignParentLeft="true"
+            android:text="Start Scanning" />
     <Button
         android:id="@+id/exitButton"
         style="@style/Widget.AppCompat.Button"
         android:layout_width="140dp"
         android:layout_height="wrap_content"
         android:layout_margin="10dp"
+        android:layout_alignParentRight="true"
         android:text="Exit App" />
     </RelativeLayout>
 
