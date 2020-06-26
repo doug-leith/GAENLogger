@@ -63,9 +63,10 @@ public class FirstFragment extends Fragment {
                     = opportunisticScandb.opportunisticScanDao().getSince(Instant.now().getEpochSecond()-24*60*60);
             String output="";
             for (int i=0; i<res.size(); i=i+1) {
-                DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.UK );
+                //DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.UK );
+                DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss", Locale.UK );
                 String d = dateFormat.format(Date.from(Instant.ofEpochSecond(res.get(i).timestamp)));
-                output = output+res.get(i).rpi+"("+d+"\n";
+                output = output+res.get(i).rpi+" ("+d+")\n";
             }
             final String output_display = output;
             getActivity().runOnUiThread( new Runnable() {
@@ -104,13 +105,13 @@ public class FirstFragment extends Fragment {
                         //Debug.println("Turning Bluetooth on...");
                         break;
                 }
-            } else if (action.equals(BLEAdvertiser.bleOffCallback)) {
+            } else if (action.equals(BLELogger.bleOffCallback)) {
                 Debug.println("bleOffCallback");
                 Debug.println( "Ask user to turn bluetooth on");
                 // ask user to switch on bluetooth
                 Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 activity.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-            } else if (action.equals(BLEAdvertiser.scanCallback)) {
+            } else if (action.equals(BLELogger.scanCallback)) {
                 // new scan result update UI
                 Log.d("DL","new scan result");
                 updateText();
@@ -176,8 +177,8 @@ public class FirstFragment extends Fragment {
         textBox.setMovementMethod(new ScrollingMovementMethod());
         updateText();
 
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(BLEAdvertiser.bleOffCallback);
+        IntentFilter filter = new IntentFilter(BLELogger.scanCallback);
+        filter.addAction(BLELogger.bleOffCallback);
         localBroadcastManager = LocalBroadcastManager.getInstance(getActivity());
         localBroadcastManager.registerReceiver(mReceiver, filter);
         // to catch bluetooth state changes we need to use register receiver globally

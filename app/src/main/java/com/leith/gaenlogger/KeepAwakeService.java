@@ -20,7 +20,7 @@ public class KeepAwakeService extends Service {
     private NotificationManager mNM;
     private final int NOTIFICATION = 771579;
     private LocalBroadcastManager localBroadcastManager = null;
-    private BLEAdvertiser ble = null;
+    private BLELogger ble = null;
     private Context context = null;
     private Notification notification = null;
     private static final boolean DEBUGGING = false;  // generate extra debug output ?
@@ -37,7 +37,7 @@ public class KeepAwakeService extends Service {
         context  = this.getApplicationContext();
         localBroadcastManager = LocalBroadcastManager.getInstance(this);
         if (ble == null) {
-            ble = BLEAdvertiser.getInstance(context ,localBroadcastManager);
+            ble = BLELogger.getInstance(context ,localBroadcastManager);
         }
         mNM = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
         CharSequence name = "Keep Awake";

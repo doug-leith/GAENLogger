@@ -26,7 +26,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-class BLEAdvertiser {
+class BLELogger {
 
     private final BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
     private Utils u = Utils.getInstance();
@@ -43,16 +43,16 @@ class BLEAdvertiser {
     private static final boolean DEBUGGING = false;  // generate extra debug output ?
     private final boolean restartCTR = false; // false = keep CTR counter rolling
 
-    private static BLEAdvertiser instance = null;
+    private static BLELogger instance = null;
 
-    static BLEAdvertiser getInstance(Context c, LocalBroadcastManager b) {
+    static BLELogger getInstance(Context c, LocalBroadcastManager b) {
         if (instance == null) {
-            instance = new BLEAdvertiser(c,b);
+            instance = new BLELogger(c,b);
         }
         return instance;
     }
 
-    BLEAdvertiser(Context c, LocalBroadcastManager b) {
+    BLELogger(Context c, LocalBroadcastManager b) {
         localBroadcastManager = b;
         if (opportunisticScandb == null) {
             opportunisticScandb = OpportunisticScanRepository.getInstance(c);
@@ -243,8 +243,8 @@ class BLEAdvertiser {
                 s.fname = pname+"/"+fname;
                 s.timestamp = Instant.now().getEpochSecond();
                 opportunisticScandb.opportunisticScanDao().insert(s);
+                u.tryUICallback(scanCallback,"",localBroadcastManager);
             } } ).start();
-            u.tryUICallback(scanCallback,"",localBroadcastManager);
         }
 
         @Override
