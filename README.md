@@ -3,7 +3,7 @@ Proof of concept app that uses opportunistic scanning mode an Android BluetoothL
 
 Since the app uses opportunistic scanning it places no additional drain on the phone battery.   It requires no special privileges.  
 
-##Example Uses
+## Example Uses
 The data collected might be used, for example, to:
 
 1.  Display the number of nearby handsets running the Google/Apple API (estimated via the number of distinct RPIs observed in each scan), and how this varies with time and location.
